@@ -1,0 +1,104 @@
+version: '3.9'
+
+services:
+
+  # -------------------- USER DB ---------------------
+  userdb:
+    image: postgres:15
+    container_name: userdb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root123
+      POSTGRES_DB: userdb
+    ports:
+      - "5433:5432"
+    networks:
+      - blog-net
+
+  # -------------------- USER SERVICE ----------------
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://userdb:5432/userdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root123
+    depends_on:
+      - userdb
+    networks:
+      - blog-net
+
+
+  postdb:
+    image: postgres:15
+    container_name: postdb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root123
+      POSTGRES_DB: postdb
+    ports:
+      - "5434:5432"
+    networks:
+      - blog-net
+
+
+  post-service:
+    build: ./post-service
+    container_name: post-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postdb:5432/postdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root123
+    depends_on:
+      - postdb
+    networks:
+      - blog-net
+
+
+  commentdb:
+    image: postgres:15
+    container_name: commentdb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root123
+      POSTGRES_DB: commentdb
+    ports:
+      - "5435:5432"
+    networks:
+      - blog-net
+
+  # -------------------- COMMENT SERVICE --------------
+  comment-service:
+    build: ./comment-service
+    container_name: comment-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://commentdb:5432/commentdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root123
+    depends_on:
+      - commentdb
+    networks:
+      - blog-net
+
+  # -------------------- API GATEWAY ------------------
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "9091:9091"
+    depends_on:
+      - user-service
+      - post-service
+      - comment-service
+    networks:
+      - blog-net
+
+networks:
+  blog-net:
+    driver: bridge
